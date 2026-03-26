@@ -1,14 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Planetary Transit Tracker 2026</title>
+    <meta name="description" content="Track planetary transits and aspects for March–June 2026. Swiss Ephemeris precision with transit-to-natal chart overlay." />
+    <meta property="og:title" content="Planetary Transit Tracker 2026" />
+    <meta property="og:description" content="Swiss Ephemeris precision transit tracking with natal chart overlay." />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☉</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script>
+      // Prevent flash: apply saved theme + design config before render
+      (function() {
+        var t = localStorage.getItem('theme');
+        if (t === 'light') document.documentElement.classList.remove('dark');
+        else if (!t && window.matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.remove('dark');
+        // Apply saved design customizations
+        try {
+          var c = JSON.parse(localStorage.getItem('astro-design-config'));
+          if (c) {
+            var s = document.documentElement.style;
+            if (c.accent) { s.setProperty('--accent-color', c.accent); s.setProperty('--accent-highlight', c.highlight || c.accent); }
+            if (c.aspects) { for (var k in c.aspects) s.setProperty('--color-' + k, c.aspects[k]); }
+            if (c.glass) { s.setProperty('--glass-blur', c.glass.blur); }
+            if (c.font) s.setProperty('--font-display', c.font);
+            if (c.borderRadius !== undefined) s.setProperty('--radius', c.borderRadius + 'rem');
+          }
+        } catch(e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100 antialiased">
+  <body class="antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

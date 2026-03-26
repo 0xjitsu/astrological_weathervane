@@ -1,4 +1,5 @@
-import { PLANET_SYMBOLS, ASPECT_COLORS, TYPE_COLORS } from '../utils/astroConstants';
+import { memo } from 'react';
+import { PLANET_SYMBOLS, ASPECT_COLOR_VARS, TYPE_COLORS } from '../utils/astroConstants';
 import { formatDate, getOrbColor, parseOrb } from '../utils/formatters';
 
 function TypeBadge({ type }) {
@@ -17,10 +18,10 @@ function TypeBadge({ type }) {
   );
 }
 
-export default function TransitTable({ events }) {
+export default memo(function TransitTable({ events }) {
   if (!events.length) {
     return (
-      <div className="text-center py-12 text-zinc-500 font-mono text-sm">
+      <div className="text-center py-12 font-mono text-sm" style={{ color: 'var(--text-muted)' }}>
         No events match your filters.
       </div>
     );
@@ -31,10 +32,10 @@ export default function TransitTable({ events }) {
       <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: '0 2px' }}>
         <thead>
           <tr className="text-left text-[11px] font-mono uppercase tracking-wider">
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Date</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Type</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Event</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60 text-center">Orb</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Date</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Type</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Event</th>
+            <th className="px-2.5 py-2 border-b text-center" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Orb</th>
           </tr>
         </thead>
         <tbody>
@@ -42,23 +43,27 @@ export default function TransitTable({ events }) {
             const isMoonIng = e.type === 'Moon Ingress';
             const isHighlight = e.highlight;
             const dimmed = isMoonIng && !isHighlight;
-            const aspColor = ASPECT_COLORS[e.aspect] || '#999';
+            const aspColor = ASPECT_COLOR_VARS[e.aspect] || '#999';
             const orbVal = parseOrb(e.orb);
 
             let rowBg = 'transparent';
-            if (isHighlight && !isMoonIng) rowBg = 'rgba(167,139,250,0.06)';
-            if (isMoonIng && isHighlight) rowBg = 'rgba(245,158,11,0.08)';
+            if (isHighlight && !isMoonIng) rowBg = 'var(--highlight-purple)';
+            if (isMoonIng && isHighlight) rowBg = 'var(--highlight-amber)';
 
             return (
               <tr
                 key={idx}
-                className="hover:bg-zinc-800/40 transition-colors"
-                style={{ background: rowBg }}
+                className="transition-colors"
+                style={{
+                  background: rowBg,
+                  '--tw-bg-opacity': 1,
+                }}
+                onMouseEnter={(ev) => { if (rowBg === 'transparent') ev.currentTarget.style.background = 'var(--row-hover)'; }}
+                onMouseLeave={(ev) => { ev.currentTarget.style.background = rowBg; }}
               >
-                {/* Date */}
                 <td
-                  className="px-2.5 py-2 font-mono text-xs whitespace-nowrap border-b border-white/[0.04]"
-                  style={{ opacity: dimmed ? 0.5 : 0.9 }}
+                  className="px-2.5 py-2 font-mono text-xs whitespace-nowrap border-b"
+                  style={{ opacity: dimmed ? 0.5 : 0.9, borderColor: 'var(--border-subtle)' }}
                 >
                   {formatDate(e.date)}
                   {e.time && (
@@ -66,17 +71,16 @@ export default function TransitTable({ events }) {
                   )}
                 </td>
 
-                {/* Type */}
-                <td className="px-2.5 py-2 border-b border-white/[0.04]">
+                <td className="px-2.5 py-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                   <TypeBadge type={e.type} />
                 </td>
 
-                {/* Event */}
                 <td
-                  className="px-2.5 py-2 border-b border-white/[0.04]"
+                  className="px-2.5 py-2 border-b"
                   style={{
                     fontWeight: isHighlight ? 600 : 400,
                     opacity: dimmed ? 0.55 : 1,
+                    borderColor: 'var(--border-subtle)',
                   }}
                 >
                   <div>
@@ -111,10 +115,9 @@ export default function TransitTable({ events }) {
                   )}
                 </td>
 
-                {/* Orb */}
                 <td
-                  className="px-2.5 py-2 font-mono text-xs text-center border-b border-white/[0.04]"
-                  style={{ color: orbVal ? getOrbColor(orbVal) : '' }}
+                  className="px-2.5 py-2 font-mono text-xs text-center border-b"
+                  style={{ color: orbVal ? getOrbColor(orbVal) : '', borderColor: 'var(--border-subtle)' }}
                 >
                   {e.orb || '—'}
                 </td>
@@ -125,4 +128,4 @@ export default function TransitTable({ events }) {
       </table>
     </div>
   );
-}
+})

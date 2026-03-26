@@ -23,6 +23,15 @@ export const ASPECT_COLORS = {
   Opposition: '#ee6c4d',
 };
 
+// CSS variable versions for use in inline styles — these respect DesignCustomizer overrides
+export const ASPECT_COLOR_VARS = {
+  Conjunction: 'var(--color-conjunction, #e8c547)',
+  Sextile: 'var(--color-sextile, #4ecdc4)',
+  Square: 'var(--color-square, #ff6b6b)',
+  Trine: 'var(--color-trine, #6bcb77)',
+  Opposition: 'var(--color-opposition, #ee6c4d)',
+};
+
 export const ASPECT_ANGLES = {
   Conjunction: 0,
   Sextile: 60,

@@ -1,65 +1,59 @@
-import { PLANET_SYMBOLS, ASPECT_COLORS, TYPE_COLORS } from '../utils/astroConstants';
+import { memo } from 'react';
+import { PLANET_SYMBOLS, ASPECT_COLOR_VARS, TYPE_COLORS } from '../utils/astroConstants';
 import { formatDate, getOrbColor } from '../utils/formatters';
 
-export default function NatalOverlay({ aspects, chartName }) {
+export default memo(function NatalOverlay({ aspects, chartName }) {
   if (!aspects.length) {
     return (
-      <div className="text-center py-12 text-zinc-500 font-mono text-sm">
+      <div className="text-center py-12 font-mono text-sm" style={{ color: 'var(--text-muted)' }}>
         No transit-to-natal aspects found for the current filters.
       </div>
     );
   }
-
-  const color = TYPE_COLORS['Transit-to-Natal'];
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm" style={{ borderCollapse: 'separate', borderSpacing: '0 2px' }}>
         <thead>
           <tr className="text-left text-[11px] font-mono uppercase tracking-wider">
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Date</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Aspect</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60">Event</th>
-            <th className="px-2.5 py-2 opacity-50 border-b border-zinc-700/60 text-center">Orb</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Date</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Aspect</th>
+            <th className="px-2.5 py-2 border-b" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Event</th>
+            <th className="px-2.5 py-2 border-b text-center" style={{ opacity: 0.5, borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}>Orb</th>
           </tr>
         </thead>
         <tbody>
           {aspects.map((e, idx) => {
-            const aspColor = ASPECT_COLORS[e.aspect] || '#999';
+            const aspColor = ASPECT_COLOR_VARS[e.aspect] || '#999';
             const isMoonTransit = e.transitBody === 'Moon';
 
             return (
               <tr
                 key={idx}
-                className="hover:bg-zinc-800/40 transition-colors"
+                className="transition-colors"
                 style={{
-                  background: isMoonTransit
-                    ? 'rgba(148,163,184,0.04)'
-                    : 'rgba(192,132,252,0.04)',
+                  background: isMoonTransit ? 'var(--highlight-slate)' : 'var(--highlight-purple)',
                   opacity: isMoonTransit ? 0.7 : 1,
                 }}
               >
-                {/* Date */}
-                <td className="px-2.5 py-2 font-mono text-xs whitespace-nowrap border-b border-white/[0.04] opacity-90">
+                <td className="px-2.5 py-2 font-mono text-xs whitespace-nowrap border-b" style={{ opacity: 0.9, borderColor: 'var(--border-subtle)' }}>
                   {formatDate(e.date)}
                 </td>
 
-                {/* Aspect Badge */}
-                <td className="px-2.5 py-2 border-b border-white/[0.04]">
+                <td className="px-2.5 py-2 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
                   <span
                     className="inline-block px-2 py-0.5 rounded text-[11px] font-bold"
                     style={{
-                      background: aspColor + '25',
+                      background: `color-mix(in srgb, ${aspColor} 15%, transparent)`,
                       color: aspColor,
-                      border: `1px solid ${aspColor}55`,
+                      border: `1px solid color-mix(in srgb, ${aspColor} 33%, transparent)`,
                     }}
                   >
                     {e.aspect}
                   </span>
                 </td>
 
-                {/* Event */}
-                <td className="px-2.5 py-2 border-b border-white/[0.04] font-semibold">
+                <td className="px-2.5 py-2 border-b font-semibold" style={{ borderColor: 'var(--border-subtle)' }}>
                   <div>
                     <span className="opacity-60 text-xs">Tr.</span>{' '}
                     <span className="mr-0.5">{PLANET_SYMBOLS[e.transitBody] || ''}</span>
@@ -83,10 +77,9 @@ export default function NatalOverlay({ aspects, chartName }) {
                   )}
                 </td>
 
-                {/* Orb */}
                 <td
-                  className="px-2.5 py-2 font-mono text-xs text-center border-b border-white/[0.04]"
-                  style={{ color: getOrbColor(e.orb) }}
+                  className="px-2.5 py-2 font-mono text-xs text-center border-b"
+                  style={{ color: getOrbColor(e.orb), borderColor: 'var(--border-subtle)' }}
                 >
                   {e.orb}°
                 </td>
@@ -97,4 +90,4 @@ export default function NatalOverlay({ aspects, chartName }) {
       </table>
     </div>
   );
-}
+})
