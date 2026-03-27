@@ -1,0 +1,283 @@
+diff --git a/pages/index.js b/pages/index.js
+index 1111111..2222222 100644
+--- a/pages/index.js
++++ b/pages/index.js
+@@ -1,18 +1,38 @@
+-import Timeline from "../components/Timeline"
+-import { useEffect, useState } from "react"
+-import { fetchEphemeris } from "../lib/astro"
++import { useEffect, useState } from "react"
++import AstroCalendar from "../components/AstroCalendar"
++import { processRawEphemeris } from "../lib/astro"
++import { generateCalendarEvents } from "../lib/calendarEvents"
+
+ export default function Home() {
+-  const [data, setData] = useState([])
++  const [dailyData, setDailyData] = useState([])
++  const [events, setEvents] = useState([])
+
+   useEffect(() => {
+     async function load() {
+-      const res = await fetch("/api/ephemeris")
+-      const json = await res.json()
+-      setData(json)
++      const res = await fetch("/api/ephemeris")
++      const raw = await res.json()
++
++      const processed = processRawEphemeris(raw)
++      setDailyData(processed)
++
++      const eventList = generateCalendarEvents(processed)
++      setEvents(eventList)
+     }
+     load()
+   }, [])
+
+-  return <Timeline data={data} />
++  return (
++    <AstroCalendar
++      dailyData={dailyData}
++      events={events}
++    />
++  )
+ }
+diff --git a/lib/astro.js b/lib/astro.js
+index 1111111..2222222 100644
+--- a/lib/astro.js
++++ b/lib/astro.js
+@@ -1,7 +1,54 @@
+-export async function fetchEphemeris(start, end) {
+-  const res = await fetch(`/api/ephemeris?start=${start}&end=${end}`)
+-  return res.json()
+-}
++export function processRawEphemeris(data) {
++  // Remove True Node
++  const cleaned = data.filter(d => d.name !== "True Node")
++
++  // Mean Node
++  const meanNode = cleaned.find(d => d.name === "Mean Node")
++
++  // South Node
++  const southNode = {
++    date: meanNode.date,
++    name: "South Node",
++    longitude: (meanNode.longitude + 180) % 360,
++    sign: signOf((meanNode.longitude + 180) % 360)
++  }
++
++  // Ensure Juno included
++  const juno = data.find(d => d.name === "Juno")
++
++  return [...cleaned, southNode, juno]
++}
++
++function signOf(deg) {
++  const signs = [
++    "Aries", "Taurus", "Gemini", "Cancer",
++    "Leo", "Virgo", "Libra", "Scorpio",
++    "Sagittarius", "Capricorn", "Aquarius", "Pisces"
++  ]
++  return signs[Math.floor(deg / 30)]
++}
+
+diff --git a/lib/calendarEvents.js b/lib/calendarEvents.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/lib/calendarEvents.js
+@@ -0,0 +1,125 @@
++import dayjs from "dayjs"
++
++export function generateCalendarEvents(dailyData) {
++  const byBody = groupBy(dailyData, "name")
++  const events = []
++
++  for (const body in byBody) {
++    const series = byBody[body]
++
++    for (let i = 1; i < series.length; i++) {
++      const prev = series[i - 1]
++      const curr = series[i]
++
++      const isRetro = curr.longitude < prev.longitude
++      const wasRetro = prev.longitude < (series[i - 2]?.longitude ?? prev.longitude)
++
++      // Retrograde start
++      if (isRetro && !wasRetro) {
++        events.push({
++          title: `${body} Retrograde`,
++          start: new Date(curr.date),
++          end: new Date(curr.date),
++          meta: {
++            body,
++            retrogradeRange: { start: curr.date }
++          }
++        })
++      }
++
++      // Retrograde end
++      if (!isRetro && wasRetro) {
++        const last = events.find(
++          e => e.meta.body === body &&
++          e.meta.retrogradeRange &&
++          !e.meta.retrogradeRange.end
++        )
++        if (last) last.meta.retrogradeRange.end = curr.date
++      }
++
++      // Ingress
++      if (prev.sign !== curr.sign) {
++        events.push({
++          title: `${body} enters ${curr.sign}`,
++          start: new Date(curr.date),
++          end: new Date(curr.date),
++          meta: {
++            body,
++            ingress: { sign: curr.sign, date: curr.date },
++            egress: { sign: prev.sign, date: prev.date }
++          }
++        })
++      }
++    }
++  }
++
++  return events
++}
++
++function groupBy(arr, key) {
++  return arr.reduce((acc, obj) => {
++    acc[obj[key]] = acc[obj[key]] || []
++    acc[obj[key]].push(obj)
++    return acc
++  }, {})
++}
+diff --git a/components/AstroCalendar.js b/components/AstroCalendar.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/components/AstroCalendar.js
+@@ -0,0 +1,85 @@
++import { useState } from "react"
++import { Calendar } from "big-calendar"
++import dayjs from "dayjs"
++import TimelineDrawer from "./TimelineDrawer"
++
++export default function AstroCalendar({ events, dailyData }) {
++  const [drawerOpen, setDrawerOpen] = useState(false)
++  const [drawerContext, setDrawerContext] = useState(null)
++
++  const onSelectEvent = (event) => {
++    setDrawerContext({
++      type: "event",
++      data: event.meta
++    })
++    setDrawerOpen(true)
++  }
++
++  const onSelectSlot = (slot) => {
++    const date = dayjs(slot.start).format("YYYY-MM-DD")
++    const bodies = dailyData.filter(d => d.date === date)
++
++    setDrawerContext({
++      type: "day",
++      date,
++      bodies
++    })
++    setDrawerOpen(true)
++  }
++
++  return (
++    <>
++      <Calendar
++        view="month"
++        events={events}
++        onSelectEvent={onSelectEvent}
++        onSelectSlot={onSelectSlot}
++        selectable
++        style={{ height: "85vh" }}
++      />
++
++      <TimelineDrawer
++        open={drawerOpen}
++        context={drawerContext}
++        onClose={() => setDrawerOpen(false)}
++      />
++    </>
++  )
++}
+diff --git a/components/TimelineDrawer.js b/components/TimelineDrawer.js
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/components/TimelineDrawer.js
+@@ -0,0 +1,122 @@
++export default function TimelineDrawer({ open, context, onClose }) {
++  if (!open || !context) return null
++
++  return (
++    <div style={{
++      position: "fixed",
++      bottom: 0,
++      left: 0,
++      right: 0,
++      height: "45vh",
++      background: "#111",
++      color: "#fff",
++      borderTop: "1px solid #333",
++      padding: 20,
++      overflowY: "auto",
++      zIndex: 500
++    }}>
++      <button onClick={onClose} style={{ float: "right" }}>
++        Close
++      </button>
++
++      {context.type === "day" && (
++        <DayView context={context} />
++      )}
++
++      {context.type === "event" && (
++        <EventView meta={context.data} />
++      )}
++    </div>
++  )
++}
++
++function DayView({ context }) {
++  return (
++    <div>
++      <h2>{context.date}</h2>
++      {context.bodies.map((b) => (
++        <div key={b.name} style={{ marginBottom: 10 }}>
++          <strong>{b.name}</strong>: {b.sign} {Math.round(b.longitude)}°
++        </div>
++      ))}
++    </div>
++  )
++}
++
++function EventView({ meta }) {
++  return (
++    <div>
++      <h2>{meta.body}</h2>
++
++      {meta.retrogradeRange && (
++        <p>
++          Retrograde: {meta.retrogradeRange.start} → {meta.retrogradeRange.end}
++        </p>
++      )}
++
++      {meta.ingress && (
++        <p>
++          Ingress: {meta.ingress.date} → {meta.ingress.sign}
++        </p>
++      )}
++
++      {meta.egress && (
++        <p>
++          Egress: {meta.egress.date} → {meta.egress.sign}
++        </p>
++      )}
++    </div>
++  )
++}
