@@ -121,7 +121,7 @@ export default function BirthDataInput({ onNatalChartChange }) {
           type="date"
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
-          className="w-full max-w-xs px-3 py-2 border rounded text-sm font-mono focus:outline-none"
+          className="w-full sm:max-w-xs px-3 py-2.5 border rounded text-sm font-mono focus:outline-none"
           style={inputStyle}
           min="1900-01-01"
           max="2030-12-31"
@@ -137,7 +137,7 @@ export default function BirthDataInput({ onNatalChartChange }) {
           type="time"
           value={birthTime}
           onChange={(e) => setBirthTime(e.target.value)}
-          className="w-full max-w-xs px-3 py-2 border rounded text-sm font-mono focus:outline-none"
+          className="w-full sm:max-w-xs px-3 py-2.5 border rounded text-sm font-mono focus:outline-none"
           style={inputStyle}
         />
         <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
@@ -163,7 +163,7 @@ export default function BirthDataInput({ onNatalChartChange }) {
               if (cityResults.length > 0 && !selectedCity) setShowDropdown(true);
             }}
             placeholder="Search city..."
-            className="w-full max-w-xs px-3 py-2 border rounded text-sm font-mono focus:outline-none"
+            className="w-full sm:max-w-xs px-3 py-2.5 border rounded text-sm font-mono focus:outline-none"
             style={inputStyle}
             autoComplete="off"
           />
@@ -213,7 +213,7 @@ export default function BirthDataInput({ onNatalChartChange }) {
                   const results = searchCities(name);
                   if (results.length > 0) selectCity(results[0]);
                 }}
-                className="text-[11px] px-2 py-0.5 rounded-full border cursor-pointer transition-colors hover:border-[var(--accent-color)]"
+                className="text-[11px] px-3 py-1.5 rounded-full border cursor-pointer transition-colors hover:border-[var(--accent-color)]"
                 style={{
                   borderColor: 'var(--border-color)',
                   color: 'var(--text-muted)',

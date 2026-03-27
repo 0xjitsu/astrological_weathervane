@@ -324,7 +324,7 @@ export default function DesignCustomizer() {
                       )}
                     </div>
                     <div
-                      className="text-[10px] font-mono pl-[calc(0.75rem+15px+5*10px)]"
+                      className="text-[10px] font-mono mt-1"
                       style={{ color: 'var(--text-muted)' }}
                     >
                       {theme.description}
