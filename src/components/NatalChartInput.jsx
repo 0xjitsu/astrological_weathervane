@@ -286,48 +286,52 @@ export default function NatalChartInput({ onNatalChartChange, sampleNatal }) {
             {BODIES.map((body) => {
               const f = fields[body];
               return (
-                <div
-                  key={body}
-                  className="grid grid-cols-[1fr_52px_1fr_52px] sm:grid-cols-[140px_64px_120px_64px] gap-1.5 sm:gap-2 items-center"
-                >
-                  <div className="flex items-center gap-1.5 text-sm min-w-0">
-                    <span className="text-base w-5 text-center shrink-0">
-                      {PLANET_SYMBOLS[body] || '•'}
-                    </span>
-                    <span className="truncate text-xs sm:text-sm">{body}</span>
+                <div key={body} className="space-y-1 sm:space-y-0">
+                  {/* Mobile: 2 rows | Desktop: 1 row */}
+                  <div className="sm:grid sm:grid-cols-[140px_64px_120px_64px] sm:gap-2 sm:items-center">
+                    {/* Planet name — full width on mobile, first col on desktop */}
+                    <div className="flex items-center gap-1.5 text-sm min-w-0 mb-1 sm:mb-0">
+                      <span className="text-base w-5 text-center shrink-0">
+                        {PLANET_SYMBOLS[body] || '•'}
+                      </span>
+                      <span className="truncate text-xs sm:text-sm">{body}</span>
+                    </div>
+                    {/* Deg/Sign/Min — 3-col grid on mobile, inline on desktop */}
+                    <div className="grid grid-cols-[1fr_2fr_1fr] gap-1.5 sm:contents">
+                      <input
+                        type="number"
+                        min={0}
+                        max={29}
+                        placeholder="°"
+                        value={f.deg}
+                        onChange={(e) => updateField(body, 'deg', e.target.value)}
+                        className="w-full px-1.5 py-2.5 border rounded text-center text-sm font-mono focus:outline-none"
+                        style={inputCss}
+                      />
+                      <select
+                        value={f.sign}
+                        onChange={(e) => updateField(body, 'sign', e.target.value)}
+                        className="w-full px-1 py-2.5 border rounded text-xs sm:text-sm font-mono cursor-pointer focus:outline-none min-w-0"
+                        style={inputCss}
+                      >
+                        {SIGNS.map((s, i) => (
+                          <option key={i} value={i}>
+                            {s.glyph} {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        placeholder="'"
+                        value={f.min}
+                        onChange={(e) => updateField(body, 'min', e.target.value)}
+                        className="w-full px-1.5 py-2.5 border rounded text-center text-sm font-mono focus:outline-none"
+                        style={inputCss}
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="number"
-                    min={0}
-                    max={29}
-                    placeholder="°"
-                    value={f.deg}
-                    onChange={(e) => updateField(body, 'deg', e.target.value)}
-                    className="w-full px-1.5 py-2 border rounded text-center text-sm font-mono focus:outline-none"
-                    style={inputCss}
-                  />
-                  <select
-                    value={f.sign}
-                    onChange={(e) => updateField(body, 'sign', e.target.value)}
-                    className="w-full px-1 py-2 border rounded text-xs sm:text-sm font-mono cursor-pointer focus:outline-none min-w-0"
-                    style={inputCss}
-                  >
-                    {SIGNS.map((s, i) => (
-                      <option key={i} value={i}>
-                        {s.glyph} {s.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min={0}
-                    max={59}
-                    placeholder="'"
-                    value={f.min}
-                    onChange={(e) => updateField(body, 'min', e.target.value)}
-                    className="w-full px-1.5 py-2 border rounded text-center text-sm font-mono focus:outline-none"
-                    style={inputCss}
-                  />
                 </div>
               );
             })}

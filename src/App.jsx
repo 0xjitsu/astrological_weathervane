@@ -163,20 +163,22 @@ export default function App() {
       <ScrollProgress />
       <div className="min-h-screen px-4 py-6 max-w-[960px] mx-auto animate-fade-in">
         {/* Header */}
-        <header className="text-center mb-8 relative">
-          <div className="absolute right-0 top-0 z-10 flex gap-1.5">
+        <header className="mb-8">
+          <div className="flex justify-end gap-1.5 mb-2">
             <DesignCustomizer />
             <ThemeToggle />
           </div>
-          <div className="text-[11px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.25em] uppercase mb-2 font-mono pr-12 sm:pr-0" style={{ color: 'var(--text-muted)' }}>
-            Swiss Ephemeris · 1° Orb · PHT (UTC+8)
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-light tracking-tight mb-1">
-            <span className="celestial-spin mr-2">☉</span>
-            Planetary Transits & Aspects
-          </h1>
-          <div className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
-            March 25 – June 24, 2026
+          <div className="text-center">
+            <div className="text-[11px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.25em] uppercase mb-2 font-mono" style={{ color: 'var(--text-muted)' }}>
+              Swiss Ephemeris · 1° Orb · PHT (UTC+8)
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-light tracking-tight mb-1">
+              <span className="celestial-spin mr-2">☉</span>
+              Planetary Transits & Aspects
+            </h1>
+            <div className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
+              March 25 – June 24, 2026
+            </div>
           </div>
         </header>
 
@@ -195,7 +197,7 @@ export default function App() {
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer border-b-2 -mb-px whitespace-nowrap"
+              className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer border-b-3 -mb-px whitespace-nowrap"
               style={{
                 borderColor: activeTab === tab.id ? 'var(--accent-color, #a78bfa)' : 'transparent',
                 color: activeTab === tab.id ? 'var(--accent-highlight, #c084fc)' : 'var(--text-muted)',
