@@ -22,7 +22,7 @@ export default function PlanetaryPositions({ positions, isOpen, onToggle }) {
       >
         <div className="overflow-hidden">
           <div
-            className="rounded-b-lg p-4 grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-2"
+            className="rounded-b-lg p-4 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2"
             style={{
               border: '1px solid var(--border-color)',
               borderTop: 'none',
