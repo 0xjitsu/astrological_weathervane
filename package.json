@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
+    "generate:juno": "node scripts/generateJunoTransits.js"
+
   },
   "dependencies": {
   "astronomia": "^4.2.0",
