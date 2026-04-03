@@ -1,7 +1,13 @@
+import useSkyTransits from "./modules/transits/useSkyTransits";
+import useNatalTransits from "./modules/transits/useNatalTransits";
+import useTransitFilters from "./modules/filters/useTransitFilters";
+import { useSkyStats, useNatalStats } from "./modules/stats/useTransitStats";
+
 import { useState, useMemo, useEffect, useRef } from 'react';
 import transitData from './data/transitData.json';
 import dailyPositions from './data/dailyPositions.json';
 import sampleNatal from './data/sampleNatal.json';
+
 import PlanetaryPositions from './components/PlanetaryPositions';
 import Filters from './components/Filters';
 import TransitTable from './components/TransitTable';
@@ -13,6 +19,7 @@ import ThemeToggle from './components/ThemeToggle';
 import DesignCustomizer from './components/DesignCustomizer';
 import ScrollProgress from './components/ScrollProgress';
 import useTransitNatalAspects from './hooks/useTransitNatalAspects';
+
 import AstroCalendar from './components/AstroCalendar';
 import { generateCalendarEvents } from './utils/calendarEvents';
 
@@ -42,7 +49,6 @@ function useAnimatedNumber(target, duration = 600) {
     function step(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(from + (target - from) * eased);
       setDisplay(current);
@@ -71,10 +77,12 @@ export default function App() {
   const [showPositions, setShowPositions]   = useState(false);
   const [natalChart, setNatalChart]         = useState(null);
   const [showNatalInput, setShowNatalInput] = useState(true);
-  const [filters, setFilters]               = useState(DEFAULT_FILTERS);
+
+  const { filters, setFilters, reset } = useTransitFilters(DEFAULT_FILTERS);
 
   const natalAspects = useTransitNatalAspects(natalChart, dailyPositions);
 
+  // Bodies for filters
   const skyBodies = useMemo(() => {
     const s = new Set();
     transitData.events.forEach((e) => {
@@ -95,68 +103,15 @@ export default function App() {
 
   const bodies = activeTab === 'sky' ? skyBodies : natalBodies;
 
-  const filteredSky = useMemo(() => {
-    return transitData.events.filter((e) => {
-      if (filters.type   !== 'all' && e.type   !== filters.type)   return false;
-      if (filters.aspect !== 'all' && e.aspect !== filters.aspect) return false;
-      if (filters.month  !== 'all') {
-        const m = parseInt(e.date.split('-')[1]);
-        if (m !== parseInt(filters.month)) return false;
-      }
-      if (filters.body !== 'all') {
-        if (e.body1 !== filters.body && e.body2 !== filters.body) return false;
-      }
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        return (
-          e.description.toLowerCase().includes(q) ||
-          (e.body1 && e.body1.toLowerCase().includes(q)) ||
-          (e.body2 && e.body2.toLowerCase().includes(q))
-        );
-      }
-      return true;
-    });
-  }, [filters]);
+  // Modular filtering hooks
+  const filteredSky = useSkyTransits(filters);
+  const filteredNatal = useNatalTransits(natalAspects, filters);
 
-  const filteredNatal = useMemo(() => {
-    return natalAspects.filter((e) => {
-      if (filters.aspect !== 'all' && e.aspect !== filters.aspect) return false;
-      if (filters.month  !== 'all') {
-        const m = parseInt(e.date.split('-')[1]);
-        if (m !== parseInt(filters.month)) return false;
-      }
-      if (filters.body !== 'all') {
-        if (e.transitBody !== filters.body && e.natalBody !== filters.body) return false;
-      }
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        return e.description.toLowerCase().includes(q);
-      }
-      return true;
-    });
-  }, [natalAspects, filters]);
+  // Stats via modular hooks
+  const skyStats   = useSkyStats(filteredSky);
+  const natalStats = useNatalStats(filteredNatal);
 
-  // Stats — single pass over each filtered array
-  const { skyCount, skyAspects, skyIngresses, skyMoonIng } = useMemo(() => {
-    let aspects = 0, ingresses = 0, moonIng = 0;
-    for (const e of filteredSky) {
-      if (e.type === 'Aspect')       aspects++;
-      else if (e.type === 'Ingress') ingresses++;
-      else if (e.type === 'Moon Ingress') moonIng++;
-    }
-    return { skyCount: filteredSky.length, skyAspects: aspects, skyIngresses: ingresses, skyMoonIng: moonIng };
-  }, [filteredSky]);
-
-  const { natalCount, natalPlanetary, natalLunar } = useMemo(() => {
-    let planetary = 0, lunar = 0;
-    for (const e of filteredNatal) {
-      if (e.transitBody === 'Moon') lunar++;
-      else planetary++;
-    }
-    return { natalCount: filteredNatal.length, natalPlanetary: planetary, natalLunar: lunar };
-  }, [filteredNatal]);
-
-  // Calendar events — generated once from dailyPositions
+  // Calendar events
   const calendarEvents = useMemo(
     () => generateCalendarEvents(dailyPositions),
     []
@@ -240,7 +195,7 @@ export default function App() {
           />
         )}
 
-        {/* Edit Chart button when chart is loaded */}
+        {/* Edit Chart button */}
         {activeTab === 'natal' && natalChart && !showNatalInput && (
           <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
             <span className="text-xs sm:text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
@@ -264,41 +219,45 @@ export default function App() {
           </div>
         )}
 
-        {/* Sky Transits tab */}
+        {/* Sky Transits */}
         {activeTab === 'sky' && (
           <>
             <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="sky" />
+
             <div
               className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5"
               style={{ color: 'var(--text-muted)' }}
             >
-              <span><AnimatedStat value={skyCount} /> events</span>
+              <span><AnimatedStat value={skyStats.total} /> events</span>
               <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyAspects} /> aspects</span>
+              <span><AnimatedStat value={skyStats.aspects} /> aspects</span>
               <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyIngresses} /> ingresses</span>
+              <span><AnimatedStat value={skyStats.ingresses} /> ingresses</span>
               <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyMoonIng} /> moon ingresses</span>
+              <span><AnimatedStat value={skyStats.moonIngresses} /> moon ingresses</span>
             </div>
+
             <TransitTable events={filteredSky} />
             <Legend />
           </>
         )}
 
-        {/* Transit-to-Natal tab */}
+        {/* Transit-to-Natal */}
         {activeTab === 'natal' && natalChart && (
           <>
             <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="natal" />
+
             <div
               className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5"
               style={{ color: 'var(--text-muted)' }}
             >
-              <span><AnimatedStat value={natalCount} /> aspects</span>
+              <span><AnimatedStat value={natalStats.total} /> aspects</span>
               <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalPlanetary} /> planetary</span>
+              <span><AnimatedStat value={natalStats.planetary} /> planetary</span>
               <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalLunar} /> lunar</span>
+              <span><AnimatedStat value={natalStats.lunar} /> lunar</span>
             </div>
+
             <NatalOverlay aspects={filteredNatal} chartName={natalChart?.name} />
             <Legend />
           </>
@@ -312,7 +271,7 @@ export default function App() {
           />
         )}
 
-        {/* References tab */}
+        {/* References */}
         {activeTab === 'references' && <References />}
 
       </div>
