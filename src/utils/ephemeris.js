@@ -117,6 +117,8 @@ function meanLilithLongitude(T) {
   let lon = 83.3532465 + 4069.0137287 * T - 0.0103200 * T * T
     - T * T * T / 80053 + T * T * T * T / 18999000;
   return ((lon + 180) % 360 + 360) % 360;
+
+  
 }
 
 /**
@@ -127,6 +129,44 @@ function meanLilithLongitude(T) {
  * @param {number} utcOffset - UTC offset in hours (e.g. 8 for PHT)
  * @returns {{ planets: Record<string, number> }} Ecliptic longitudes [0, 360)
  */
+/**
+ * Approximate geocentric longitude of Juno (asteroid #3)
+ * Uses mean orbital elements at J2000.
+ */
+function junoLongitude(T) {
+  // Orbital elements for Juno (epoch J2000)
+  const a = 2.6691;        // semi‑major axis (AU)
+  const e = 0.2563;        // eccentricity
+  const i = 12.9714 * Math.PI / 180;  // inclination in radians
+  const omega = 169.8587 * Math.PI / 180; // argument of perihelion
+  const Omega = 169.9124 * Math.PI / 180; // ascending node
+  const L0 = 73.1152;      // mean longitude at J2000
+  const n = 360 / (4.365 * 365.25); // mean daily motion (deg/day)
+
+  // Time in days from J2000
+  const days = T * 36525;
+
+  // Mean anomaly
+  const M = ((L0 + n * days) % 360) * Math.PI / 180;
+
+  // Equation of center (approx)
+  const E = M + e * Math.sin(M) * (1.0 + e * Math.cos(M));
+
+  // True anomaly
+  const v = 2 * Math.atan2(
+    Math.sqrt(1 + e) * Math.sin(E / 2),
+    Math.sqrt(1 - e) * Math.cos(E / 2)
+  );
+
+  // Heliocentric ecliptic longitude
+  let lon = v + omega;
+
+  // Normalize
+  lon = ((lon * 180 / Math.PI) % 360 + 360) % 360;
+
+  return lon;
+}
+
 export function computeNatalChart(dateStr, timeStr, utcOffset = 0) {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -165,6 +205,10 @@ export function computeNatalChart(dateStr, timeStr, utcOffset = 0) {
 
   // Mean Lilith (Black Moon)
   planets['Mean Lilith'] = meanLilithLongitude(T);
+
+  // Juno (asteroid #3)
+planets['Juno'] = junoLongitude(T);
+
 
   return { planets };
 }
