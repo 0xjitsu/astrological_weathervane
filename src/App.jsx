@@ -1,3 +1,6 @@
+import SkyTab from "./components/tabs/SkyTab";
+import NatalTab from "./components/tabs/NatalTab";
+import CalendarTab from "./components/tabs/CalendarTab";
 import useSkyTransits from "./modules/transits/useSkyTransits";
 import useNatalTransits from "./modules/transits/useNatalTransits";
 import useTransitFilters from "./modules/filters/useTransitFilters";
@@ -221,55 +224,37 @@ export default function App() {
 
         {/* Sky Transits */}
         {activeTab === 'sky' && (
-          <>
-            <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="sky" />
+  <SkyTab
+    filters={filters}
+    setFilters={setFilters}
+    bodies={bodies}
+    skyStats={skyStats}
+    filteredSky={filteredSky}
+  />
+)}
 
-            <div
-              className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <span><AnimatedStat value={skyStats.total} /> events</span>
-              <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyStats.aspects} /> aspects</span>
-              <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyStats.ingresses} /> ingresses</span>
-              <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyStats.moonIngresses} /> moon ingresses</span>
-            </div>
-
-            <TransitTable events={filteredSky} />
-            <Legend />
-          </>
-        )}
 
         {/* Transit-to-Natal */}
         {activeTab === 'natal' && natalChart && (
-          <>
-            <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="natal" />
+  <NatalTab
+    filters={filters}
+    setFilters={setFilters}
+    bodies={bodies}
+    natalStats={natalStats}
+    filteredNatal={filteredNatal}
+    natalChart={natalChart}
+  />
+)}
 
-            <div
-              className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <span><AnimatedStat value={natalStats.total} /> aspects</span>
-              <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalStats.planetary} /> planetary</span>
-              <span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalStats.lunar} /> lunar</span>
-            </div>
-
-            <NatalOverlay aspects={filteredNatal} chartName={natalChart?.name} />
-            <Legend />
-          </>
-        )}
 
         {/* Calendar tab */}
         {activeTab === 'calendar' && (
-          <AstroCalendar
-            dailyPositions={dailyPositions}
-            calendarEvents={calendarEvents}
-          />
-        )}
+  <CalendarTab
+    dailyPositions={dailyPositions}
+    calendarEvents={calendarEvents}
+  />
+)}
+
 
         {/* References */}
         {activeTab === 'references' && <References />}

@@ -69,25 +69,23 @@ function DayView({ context }) {
     <div>
       <h2 style={{ fontSize: 18, marginBottom: 14 }}>📅 {context.date}</h2>
 
-      {context.bodies.length === 0 && (
-        <p style={{ color: '#555' }}>No data for this day.</p>
-      )}
-
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-        gap: 10,
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
+        gap: 10
       }}>
         {context.bodies.map(b => (
           <div key={b.name} style={{
-            background: '#161616',
-            borderLeft: `3px solid ${PLANET_COLORS[b.name] || PLANET_COLORS.default}`,
-            borderRadius: 5,
-            padding: '8px 12px',
+            background: "#161616",
+            borderLeft: `4px solid ${PLANET_COLORS[b.name] || "#555"}`,
+            borderRadius: 6,
+            padding: "10px 14px"
           }}>
-            <div style={{ fontWeight: 600, fontSize: 13 }}>{b.name}</div>
-            <div style={{ color: '#aaa', fontSize: 12, marginTop: 3 }}>
-              {b.sign} {b.longitude.toFixed(2)}°
+            <div style={{ fontWeight: 600, fontSize: 13 }}>
+              {GLYPHS[b.name] || ""} {b.name}
+            </div>
+            <div style={{ color: "#aaa", fontSize: 12 }}>
+              {b.sign} — {b.longitude.toFixed(2)}°
             </div>
           </div>
         ))}
@@ -96,73 +94,56 @@ function DayView({ context }) {
   );
 }
 
-function EventView({ meta }) {
-  const color = PLANET_COLORS[meta.body] || PLANET_COLORS.default;
 
+function EventView({ meta }) {
   return (
     <div>
       <h2 style={{
         fontSize: 18,
-        marginBottom: 14,
-        paddingLeft: 12,
-        borderLeft: `3px solid ${color}`,
+        marginBottom: 10,
+        borderLeft: `4px solid ${PLANET_COLORS[meta.body] || "#666"}`,
+        paddingLeft: 10
       }}>
-        {meta.body}
+        {GLYPHS[meta.body] || ""} {meta.body}
       </h2>
 
-      {/* Retrograde */}
-      {(meta.type === 'retrograde-start' || meta.type === 'retrograde-end') && (
+      {meta.retrograde && (
         <div style={{
-          background: '#1a0a0a',
-          border: '1px solid #3a1a1a',
+          background: "#1f0000",
+          padding: "10px",
           borderRadius: 6,
-          padding: '12px 16px',
-          marginBottom: 12,
+          border: "1px solid #551111",
+          marginBottom: 12
         }}>
-          <div style={{ color: '#ff4f4f', fontWeight: 700, marginBottom: 6 }}>
-            {meta.type === 'retrograde-start' ? '℞ Retrograde Begins' : '☌ Stations Direct'}
-          </div>
-          <div style={{ color: '#aaa', fontSize: 13 }}>
-            Date: {meta.date}
-          </div>
-          <div style={{ color: '#aaa', fontSize: 13 }}>
-            Sign: {meta.sign}
-          </div>
+          <strong style={{ color: "#ff7777" }}>℞ Retrograde Active</strong>
         </div>
       )}
 
-      {/* Ingress / Egress */}
-      {meta.type === 'ingress' && (
+      {meta.aspect && (
         <div style={{
-          background: '#0a1a0a',
-          border: '1px solid #1a3a1a',
+          background: "#0e0e0e",
+          padding: "10px",
           borderRadius: 6,
-          padding: '12px 16px',
-          marginBottom: 12,
+          border: "1px solid #222",
+          marginBottom: 12
         }}>
-          <div style={{ color: '#2ecc71', fontWeight: 700, marginBottom: 8 }}>
-            ➡ Sign Ingress
-          </div>
-          <div style={{
-            display: 'flex',
-            gap: 24,
-            fontSize: 13,
-            color: '#ccc',
-          }}>
-            <div>
-              <div style={{ color: '#666', fontSize: 11, marginBottom: 3 }}>LEAVES</div>
-              <strong>{meta.egress?.sign}</strong>
-              <div style={{ color: '#555', fontSize: 11 }}>{meta.egress?.date}</div>
-            </div>
-            <div style={{ color: '#444', alignSelf: 'center', fontSize: 18 }}>→</div>
-            <div>
-              <div style={{ color: '#666', fontSize: 11, marginBottom: 3 }}>ENTERS</div>
-              <strong style={{ color: '#2ecc71' }}>{meta.ingress?.sign}</strong>
-              <div style={{ color: '#555', fontSize: 11 }}>{meta.ingress?.date}</div>
-            </div>
-          </div>
+          <strong>{ASPECT_GLYPHS[meta.aspect]} {meta.aspect}</strong>
+        </div>
+      )}
+
+      {meta.ingress && (
+        <div style={{
+          background: "#0e1f0e",
+          padding: "10px",
+          borderRadius: 6,
+          border: "1px solid #335533",
+          marginBottom: 12
+        }}>
+          <strong style={{ color: "#44dd88" }}>Sign Ingress</strong>
+          <div>Enters {meta.ingress.sign} on {meta.ingress.date}</div>
         </div>
       )}
     </div>
   );
 }
+
