@@ -1,7 +1,9 @@
 import { REFERENCES, METHODOLOGY, TECH_STACK } from '../data/references';
 
+const REFERENCES_BY_ID = new Map(REFERENCES.map((r) => [r.id, r]));
+
 function Cite({ n, inline }) {
-  const ref = REFERENCES.find((r) => r.id === n);
+  const ref = REFERENCES_BY_ID.get(n);
   if (!ref) return null;
 
   if (inline) {
