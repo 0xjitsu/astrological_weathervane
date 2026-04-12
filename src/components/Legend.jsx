@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { ASPECT_COLOR_VARS } from '../utils/astroConstants';
 
-export default function Legend() {
+export default memo(function Legend() {
   return (
     <div
       className="mt-6 p-4 rounded-lg text-xs font-mono"
@@ -39,4 +40,4 @@ export default function Legend() {
       </div>
     </div>
   );
-}
+})

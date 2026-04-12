@@ -12,33 +12,34 @@ const inputStyle = {
   color: 'var(--text-primary)',
 };
 
+const SKY_TYPE_OPTIONS = [
+  ['all', 'All Types'],
+  ['Aspect', 'Aspects'],
+  ['Ingress', 'Ingresses'],
+  ['Moon Ingress', 'Moon Ingresses'],
+];
+
+const NATAL_TYPE_OPTIONS = [['all', 'All Types']];
+
+const ASPECT_OPTIONS = [
+  ['all', 'All Aspects'],
+  ['Conjunction', '☌ Conjunction'],
+  ['Opposition', '☍ Opposition'],
+  ['Square', '□ Square'],
+  ['Trine', '△ Trine'],
+  ['Sextile', '⚹ Sextile'],
+];
+
+const MONTH_OPTIONS = [
+  ['all', 'All Months'],
+  ['3', 'March'],
+  ['4', 'April'],
+  ['5', 'May'],
+  ['6', 'June'],
+];
+
 export default function Filters({ filters, onFilterChange, bodies, mode }) {
-  const typeOptions =
-    mode === 'natal'
-      ? [['all', 'All Types']]
-      : [
-          ['all', 'All Types'],
-          ['Aspect', 'Aspects'],
-          ['Ingress', 'Ingresses'],
-          ['Moon Ingress', 'Moon Ingresses'],
-        ];
-
-  const aspectOptions = [
-    ['all', 'All Aspects'],
-    ['Conjunction', '☌ Conjunction'],
-    ['Opposition', '☍ Opposition'],
-    ['Square', '□ Square'],
-    ['Trine', '△ Trine'],
-    ['Sextile', '⚹ Sextile'],
-  ];
-
-  const monthOptions = [
-    ['all', 'All Months'],
-    ['3', 'March'],
-    ['4', 'April'],
-    ['5', 'May'],
-    ['6', 'June'],
-  ];
+  const typeOptions = mode === 'natal' ? NATAL_TYPE_OPTIONS : SKY_TYPE_OPTIONS;
 
   return (
     <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 mb-5 sm:items-center">
@@ -75,7 +76,7 @@ export default function Filters({ filters, onFilterChange, bodies, mode }) {
         style={selectStyle}
         aria-label="Filter by aspect"
       >
-        {aspectOptions.map(([v, l]) => (
+        {ASPECT_OPTIONS.map(([v, l]) => (
           <option key={v} value={v}>
             {l}
           </option>
@@ -89,7 +90,7 @@ export default function Filters({ filters, onFilterChange, bodies, mode }) {
         style={selectStyle}
         aria-label="Filter by month"
       >
-        {monthOptions.map(([v, l]) => (
+        {MONTH_OPTIONS.map(([v, l]) => (
           <option key={v} value={v}>
             {l}
           </option>

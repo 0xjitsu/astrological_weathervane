@@ -61,7 +61,7 @@ export default function BirthDataInput({ onNatalChartChange }) {
     setCityResults([]);
   }
 
-  const handleCompute = useCallback(() => {
+  const handleCompute = useCallback(async () => {
     if (!birthDate || !selectedCity) {
       setError('Please enter a birth date and select a city.');
       return;
@@ -70,32 +70,29 @@ export default function BirthDataInput({ onNatalChartChange }) {
     setError(null);
     setComputing(true);
 
-    // Use requestAnimationFrame to let the UI update before heavy computation
-    requestAnimationFrame(() => {
-      try {
-        // Build a Date object for the birth date to get accurate UTC offset
-        const [y, m, d] = birthDate.split('-').map(Number);
-        const [h, min] = birthTime.split(':').map(Number);
-        const birthDateObj = new Date(y, m - 1, d, h, min);
-        const utcOffset = getUtcOffset(selectedCity.tz, birthDateObj);
+    try {
+      // Build a Date object for the birth date to get accurate UTC offset
+      const [y, m, d] = birthDate.split('-').map(Number);
+      const [h, min] = birthTime.split(':').map(Number);
+      const birthDateObj = new Date(y, m - 1, d, h, min);
+      const utcOffset = getUtcOffset(selectedCity.tz, birthDateObj);
 
-        const result = computeNatalChart(birthDate, birthTime, utcOffset);
+      const result = await computeNatalChart(birthDate, birthTime, utcOffset);
 
-        // Build Astro-Seek verification URL
-        const url = astroSeekUrl(
-          birthDate, birthTime,
-          selectedCity.lat, selectedCity.lon,
-          selectedCity.name
-        );
+      // Build Astro-Seek verification URL
+      const url = astroSeekUrl(
+        birthDate, birthTime,
+        selectedCity.lat, selectedCity.lon,
+        selectedCity.name
+      );
 
-        setComputed(result);
-        setVerifyUrl(url);
-        setComputing(false);
-      } catch (err) {
-        setError(`Computation error: ${err.message}`);
-        setComputing(false);
-      }
-    });
+      setComputed(result);
+      setVerifyUrl(url);
+    } catch (err) {
+      setError(`Computation error: ${err.message}`);
+    } finally {
+      setComputing(false);
+    }
   }, [birthDate, birthTime, selectedCity]);
 
   function handleApply() {
