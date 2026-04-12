@@ -130,6 +130,8 @@ function meanLilithLongitude(T) {
   let lon = 83.3532465 + 4069.0137287 * T - 0.0103200 * T * T
     - T * T * T / 80053 + T * T * T * T / 18999000;
   return ((lon + 180) % 360 + 360) % 360;
+
+  
 }
 
 /**
@@ -141,6 +143,27 @@ function meanLilithLongitude(T) {
  * @param {number} utcOffset - UTC offset in hours (e.g. 8 for PHT)
  * @returns {Promise<{ planets: Record<string, number> }>} Ecliptic longitudes [0, 360)
  */
+/**
+ * Approximate geocentric longitude of Juno (asteroid #3)
+ * Uses mean orbital elements at J2000.
+ */
+function junoLongitude(T) {
+  const e = 0.2563;
+  const omega = 169.8587 * Math.PI / 180;
+  const L0 = 73.1152;
+  const n = 360 / (4.365 * 365.25);
+  const days = T * 36525;
+  const M = ((L0 + n * days) % 360) * Math.PI / 180;
+  const E = M + e * Math.sin(M) * (1.0 + e * Math.cos(M));
+  const v = 2 * Math.atan2(
+    Math.sqrt(1 + e) * Math.sin(E / 2),
+    Math.sqrt(1 - e) * Math.cos(E / 2)
+  );
+  let lon = v + omega;
+  lon = ((lon * 180 / Math.PI) % 360 + 360) % 360;
+  return lon;
+}
+
 export async function computeNatalChart(dateStr, timeStr, utcOffset = 0) {
   const m = await loadAstronomia();
 
@@ -181,6 +204,10 @@ export async function computeNatalChart(dateStr, timeStr, utcOffset = 0) {
 
   // Mean Lilith (Black Moon)
   planets['Mean Lilith'] = meanLilithLongitude(T);
+
+  // Juno (asteroid #3)
+planets['Juno'] = junoLongitude(T);
+
 
   return { planets };
 }

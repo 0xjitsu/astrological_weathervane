@@ -1,7 +1,16 @@
+import SkyTab from "./components/tabs/SkyTab";
+import NatalTab from "./components/tabs/NatalTab";
+import CalendarTab from "./components/tabs/CalendarTab";
+import useSkyTransits from "./modules/transits/useSkyTransits";
+import useNatalTransits from "./modules/transits/useNatalTransits";
+import useTransitFilters from "./modules/filters/useTransitFilters";
+import { useSkyStats, useNatalStats } from "./modules/stats/useTransitStats";
+
 import { useState, useMemo, useEffect, useRef } from 'react';
 import transitData from './data/transitData.json';
 import dailyPositions from './data/dailyPositions.json';
 import sampleNatal from './data/sampleNatal.json';
+
 import PlanetaryPositions from './components/PlanetaryPositions';
 import Filters from './components/Filters';
 import TransitTable from './components/TransitTable';
@@ -14,15 +23,19 @@ import DesignCustomizer from './components/DesignCustomizer';
 import ScrollProgress from './components/ScrollProgress';
 import useTransitNatalAspects from './hooks/useTransitNatalAspects';
 
+import AstroCalendar from './components/AstroCalendar';
+import { generateCalendarEvents } from './utils/calendarEvents';
+
 const DEFAULT_FILTERS = { search: '', type: 'all', aspect: 'all', month: 'all', body: 'all' };
 
 const TABS = [
-  { id: 'sky', label: 'Sky Transits' },
-  { id: 'natal', label: 'Transit-to-Natal' },
+  { id: 'sky',        label: 'Sky Transits' },
+  { id: 'natal',      label: 'Transit-to-Natal' },
+  { id: 'calendar',   label: 'Calendar' },
   { id: 'references', label: 'References' },
 ];
 
-// ── Animated number hook ──────────────────────
+// — Animated number hook ————————————————
 function useAnimatedNumber(target, duration = 600) {
   const [display, setDisplay] = useState(target);
   const rafRef = useRef(null);
@@ -39,7 +52,6 @@ function useAnimatedNumber(target, duration = 600) {
     function step(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(from + (target - from) * eased);
       setDisplay(current);
@@ -64,14 +76,16 @@ function AnimatedStat({ value, suffix = '' }) {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('sky');
-  const [showPositions, setShowPositions] = useState(false);
-  const [natalChart, setNatalChart] = useState(null);
+  const [activeTab, setActiveTab]           = useState('sky');
+  const [showPositions, setShowPositions]   = useState(false);
+  const [natalChart, setNatalChart]         = useState(null);
   const [showNatalInput, setShowNatalInput] = useState(true);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+
+  const { filters, setFilters, reset } = useTransitFilters(DEFAULT_FILTERS);
 
   const natalAspects = useTransitNatalAspects(natalChart, dailyPositions);
 
+  // Bodies for filters
   const skyBodies = useMemo(() => {
     const s = new Set();
     transitData.events.forEach((e) => {
@@ -90,68 +104,21 @@ export default function App() {
     return [...s].sort();
   }, [natalAspects]);
 
-  const filteredSky = useMemo(() => {
-    return transitData.events.filter((e) => {
-      if (filters.type !== 'all' && e.type !== filters.type) return false;
-      if (filters.aspect !== 'all' && e.aspect !== filters.aspect) return false;
-      if (filters.month !== 'all') {
-        const m = parseInt(e.date.split('-')[1]);
-        if (m !== parseInt(filters.month)) return false;
-      }
-      if (filters.body !== 'all') {
-        if (e.body1 !== filters.body && e.body2 !== filters.body) return false;
-      }
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        return (
-          e.description.toLowerCase().includes(q) ||
-          (e.body1 && e.body1.toLowerCase().includes(q)) ||
-          (e.body2 && e.body2.toLowerCase().includes(q))
-        );
-      }
-      return true;
-    });
-  }, [filters]);
-
-  const filteredNatal = useMemo(() => {
-    return natalAspects.filter((e) => {
-      if (filters.aspect !== 'all' && e.aspect !== filters.aspect) return false;
-      if (filters.month !== 'all') {
-        const m = parseInt(e.date.split('-')[1]);
-        if (m !== parseInt(filters.month)) return false;
-      }
-      if (filters.body !== 'all') {
-        if (e.transitBody !== filters.body && e.natalBody !== filters.body) return false;
-      }
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        return e.description.toLowerCase().includes(q);
-      }
-      return true;
-    });
-  }, [natalAspects, filters]);
-
   const bodies = activeTab === 'sky' ? skyBodies : natalBodies;
 
-  // Stats — single pass over each filtered array
-  const { skyCount, skyAspects, skyIngresses, skyMoonIng } = useMemo(() => {
-    let aspects = 0, ingresses = 0, moonIng = 0;
-    for (const e of filteredSky) {
-      if (e.type === 'Aspect') aspects++;
-      else if (e.type === 'Ingress') ingresses++;
-      else if (e.type === 'Moon Ingress') moonIng++;
-    }
-    return { skyCount: filteredSky.length, skyAspects: aspects, skyIngresses: ingresses, skyMoonIng: moonIng };
-  }, [filteredSky]);
+  // Modular filtering hooks
+  const filteredSky = useSkyTransits(filters);
+  const filteredNatal = useNatalTransits(natalAspects, filters);
 
-  const { natalCount, natalPlanetary, natalLunar } = useMemo(() => {
-    let planetary = 0, lunar = 0;
-    for (const e of filteredNatal) {
-      if (e.transitBody === 'Moon') lunar++;
-      else planetary++;
-    }
-    return { natalCount: filteredNatal.length, natalPlanetary: planetary, natalLunar: lunar };
-  }, [filteredNatal]);
+  // Stats via modular hooks
+  const skyStats   = useSkyStats(filteredSky);
+  const natalStats = useNatalStats(filteredNatal);
+
+  // Calendar events
+  const calendarEvents = useMemo(
+    () => generateCalendarEvents(dailyPositions),
+    []
+  );
 
   function handleTabChange(tab) {
     setActiveTab(tab);
@@ -162,6 +129,7 @@ export default function App() {
     <>
       <ScrollProgress />
       <div className="min-h-screen px-4 py-6 max-w-[960px] mx-auto animate-fade-in">
+
         {/* Header */}
         <header className="mb-8">
           <div className="flex justify-end gap-1.5 mb-2">
@@ -169,12 +137,15 @@ export default function App() {
             <ThemeToggle />
           </div>
           <div className="text-center">
-            <div className="text-[11px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.25em] uppercase mb-2 font-mono" style={{ color: 'var(--text-muted)' }}>
+            <div
+              className="text-[11px] sm:text-[13px] tracking-[0.15em] sm:tracking-[0.25em] uppercase mb-2 font-mono"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               Swiss Ephemeris · 1° Orb · PHT (UTC+8)
             </div>
             <h1 className="text-2xl sm:text-3xl font-light tracking-tight mb-1">
               <span className="celestial-spin mr-2">☉</span>
-              Planetary Transits & Aspects
+              Planetary Transits &amp; Aspects
             </h1>
             <div className="text-sm sm:text-base" style={{ color: 'var(--text-secondary)' }}>
               March 25 – June 24, 2026
@@ -183,7 +154,7 @@ export default function App() {
         </header>
 
         {/* Planetary Positions */}
-        {activeTab !== 'references' && (
+        {activeTab !== 'references' && activeTab !== 'calendar' && (
           <PlanetaryPositions
             positions={transitData.positions}
             isOpen={showPositions}
@@ -192,15 +163,18 @@ export default function App() {
         )}
 
         {/* Tabs */}
-        <div className="flex gap-0.5 sm:gap-1 mb-5 border-b overflow-x-auto" style={{ borderColor: 'var(--border-color)' }}>
+        <div
+          className="flex gap-0.5 sm:gap-1 mb-5 border-b overflow-x-auto"
+          style={{ borderColor: 'var(--border-color)' }}
+        >
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer border-b-3 -mb-px whitespace-nowrap"
               style={{
-                borderColor: activeTab === tab.id ? 'var(--accent-color, #a78bfa)' : 'transparent',
-                color: activeTab === tab.id ? 'var(--accent-highlight, #c084fc)' : 'var(--text-muted)',
+                borderColor: activeTab === tab.id ? 'var(--accent-color)' : 'transparent',
+                color: activeTab === tab.id ? 'var(--accent-highlight)' : 'var(--text-muted)',
               }}
             >
               {tab.label}
@@ -213,7 +187,7 @@ export default function App() {
           ))}
         </div>
 
-        {/* Natal Chart Input (shown when natal tab active) */}
+        {/* Natal Chart Input */}
         {activeTab === 'natal' && showNatalInput && (
           <NatalChartInput
             onNatalChartChange={(chart) => {
@@ -224,11 +198,12 @@ export default function App() {
           />
         )}
 
-        {/* Edit Chart button when chart is loaded */}
+        {/* Edit Chart button */}
         {activeTab === 'natal' && natalChart && !showNatalInput && (
           <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
             <span className="text-xs sm:text-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
-              Natal chart: <span style={{ color: 'var(--accent-highlight, #c084fc)' }}>{natalChart.name}</span>
+              Natal chart:{' '}
+              <span style={{ color: 'var(--accent-highlight)' }}>{natalChart.name}</span>
             </span>
             <button
               onClick={() => setShowNatalInput(true)}
@@ -238,10 +213,7 @@ export default function App() {
               Edit Chart
             </button>
             <button
-              onClick={() => {
-                setNatalChart(null);
-                setShowNatalInput(true);
-              }}
+              onClick={() => { setNatalChart(null); setShowNatalInput(true); }}
               className="px-2.5 py-1 text-[11px] font-mono rounded border transition-colors cursor-pointer"
               style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
             >
@@ -250,36 +222,43 @@ export default function App() {
           </div>
         )}
 
-        {/* Sky / Natal content */}
+        {/* Sky Transits */}
         {activeTab === 'sky' && (
-          <>
-            <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="sky" />
-            <div className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5" style={{ color: 'var(--text-muted)' }}>
-              <span><AnimatedStat value={skyCount} /> events</span><span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyAspects} /> aspects</span><span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyIngresses} /> ingresses</span><span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={skyMoonIng} /> moon ingresses</span>
-            </div>
-            <TransitTable events={filteredSky} />
-            <Legend />
-          </>
-        )}
+  <SkyTab
+    filters={filters}
+    setFilters={setFilters}
+    bodies={bodies}
+    skyStats={skyStats}
+    filteredSky={filteredSky}
+  />
+)}
 
+
+        {/* Transit-to-Natal */}
         {activeTab === 'natal' && natalChart && (
-          <>
-            <Filters filters={filters} onFilterChange={setFilters} bodies={bodies} mode="natal" />
-            <div className="text-[11px] sm:text-xs font-mono mb-3 flex flex-wrap gap-x-2 gap-y-0.5" style={{ color: 'var(--text-muted)' }}>
-              <span><AnimatedStat value={natalCount} /> aspects</span><span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalPlanetary} /> planetary</span><span className="hidden sm:inline">·</span>
-              <span><AnimatedStat value={natalLunar} /> lunar</span>
-            </div>
-            <NatalOverlay aspects={filteredNatal} chartName={natalChart?.name} />
-            <Legend />
-          </>
-        )}
+  <NatalTab
+    filters={filters}
+    setFilters={setFilters}
+    bodies={bodies}
+    natalStats={natalStats}
+    filteredNatal={filteredNatal}
+    natalChart={natalChart}
+  />
+)}
 
-        {/* References tab */}
+
+        {/* Calendar tab */}
+        {activeTab === 'calendar' && (
+  <CalendarTab
+    dailyPositions={dailyPositions}
+    calendarEvents={calendarEvents}
+  />
+)}
+
+
+        {/* References */}
         {activeTab === 'references' && <References />}
+
       </div>
     </>
   );
